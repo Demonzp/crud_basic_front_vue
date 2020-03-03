@@ -3,11 +3,10 @@
         <!-- Компонент Алерт выпадающее нет появляющееся сообщение которое можно 
         закрыть -->
         <Alert v-model="alert" :text="alert_text"/>
-        <!-- Окно защиты от необдуманого клика удалить тут юзаеться интересная
+        <!-- Окно защиты от необдуманого клика удалить, тут юзаеться интересная
         фича ВУ v-model, но как она работает я не раскажу)),
         также передаем ИД и слушаем подтверждение и реагируем на него в
         функции onConfirmDel -->
-        
         <WinDelConfirm 
             v-model="dialog_del" 
             :id="id_del"
@@ -17,6 +16,10 @@
             v-model="dialog_edit"
             :data="data_edit"
             @save-edit="saveEdit"
+        />
+        <WinAddRow
+            v-model="dialog_add"
+            @save-add="saveAdd"
         />
         <!-- Так тут у меня разметка скопиреная из либы вутифай
         https://vuetifyjs.com/ru/components/simple-tables 
@@ -50,6 +53,7 @@
             </tbody>
             </template>
         </v-simple-table>
+        <v-btn color="success" @click="dialog_add = true">Добавить</v-btn>
     </v-container>
 </template>
 
@@ -59,6 +63,7 @@ import DataRow from './DataRow.vue';
 import WinDelConfirm from './WinDelConfirm';
 import Alert from './Alert';
 import WinEditRow from './WinEditRow';
+import WinAddRow from './WinAddRow';
 import Vue from 'vue';
 
 export default {
@@ -67,7 +72,8 @@ export default {
         DataRow,
         WinDelConfirm,
         Alert,
-        WinEditRow
+        WinEditRow,
+        WinAddRow
     },
 
     data: () => ({
@@ -83,8 +89,9 @@ export default {
         id_del:null,
         dialog_edit: false,
         data_edit:{},
+        dialog_add: false,
         alert: false,
-        alert_text:'Все пучком!!!'
+        alert_text:''
     }),
     //moundted функция которая в Ву кличеться Options / Lifecycle Hooks
     //я просто зову же Хукс сробатывает один рас при инициализации Компонента
@@ -108,9 +115,10 @@ export default {
             console.log(error);
         });
     },
-    methods:{
+    methods:{ 
+        //Функция Изменения
         saveEdit(data){
-            //console.log('изменяем на = ',this.edit_name);
+            
             axios.put(`http://localhost:3000/products/edit/${data.id}`,{
                 name:data.name,
                 price:data.price
@@ -150,6 +158,25 @@ export default {
             });
 
             this.dialog_edit = false;
+        },
+        //Функция Добавления
+        saveAdd(data){
+            axios.post('http://localhost:3000/products/update',{
+                name:data.name,
+                price:data.price
+            })
+            .then((response)=>{
+                Vue.set(this.items, this.items.length, response.data);
+                //выдаем гуд алерт с текстом от сервера
+                
+                this.alert = true;
+                this.alert_text = `Успешно добавил ${response.data.name}`;
+            })
+            .catch((error)=>{
+                console.log(error);
+            });
+
+            this.dialog_add = false;
         },
         //Функция Удаления записи из БД принимает ИД
         onConfirmDel(){
