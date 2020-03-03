@@ -13,6 +13,11 @@
             :id="id_del"
             @confirm-del="onConfirmDel"
         />
+        <WinEditRow
+            v-model="dialog_edit"
+            :data="data_edit"
+            @save-edit="saveEdit"
+        />
         <!-- Так тут у меня разметка скопиреная из либы вутифай
         https://vuetifyjs.com/ru/components/simple-tables 
         еще момент все что начинаеться с v-, это значит из вуе или вуекса,
@@ -40,6 +45,7 @@
                 <DataRow v-for="item in items" :key="item.id" 
                     :item="item"
                     @delete="onDelete"
+                    @edit="onEdit"
                 />
             </tbody>
             </template>
@@ -52,13 +58,16 @@ import axios from 'axios';
 import DataRow from './DataRow.vue';
 import WinDelConfirm from './WinDelConfirm';
 import Alert from './Alert';
+import WinEditRow from './WinEditRow';
+import Vue from 'vue';
 
 export default {
     name: 'Table',
     components: {
         DataRow,
         WinDelConfirm,
-        Alert
+        Alert,
+        WinEditRow
     },
 
     data: () => ({
@@ -72,6 +81,8 @@ export default {
         items: [],
         dialog_del: false,
         id_del:null,
+        dialog_edit: false,
+        data_edit:{},
         alert: false,
         alert_text:'Все пучком!!!'
     }),
@@ -98,6 +109,48 @@ export default {
         });
     },
     methods:{
+        saveEdit(data){
+            //console.log('изменяем на = ',this.edit_name);
+            axios.put(`http://localhost:3000/products/edit/${data.id}`,{
+                name:data.name,
+                price:data.price
+            })
+            .then((response)=>{
+                //просто и тупо после гуд от сервера перебераю массив 
+                //и перезаписываю данные
+                //Ага и вот она походу как фича ты расказывал из Реакт
+                //если мы тупо попытаемся изменить значение текущего итема
+                //Дом не обновиться, варианта два или переназначить новый массив
+                // let new_arr = [];
+                // for(let i=0;i<this.items.length;i++){
+                //     if(this.items[i].id==data.id){
+                //         //this.items[i] = data;
+                //         new_arr.push(data);
+                //     }else{
+                //         new_arr.push(this.items[i]);
+                //     }
+                // }
+
+                // this.items = new_arr;
+
+                //Или через вот такую фичу Ву пойти Vue.set
+                for(let i=0;i<this.items.length;i++){
+                    if(this.items[i].id==data.id){
+                        Vue.set(this.items, i, data);
+                    }
+                }
+                //console.log('измененный массив = ', this.items);
+                //выдаем гуд алерт с текстом от сервера
+                
+                this.alert = true;
+                this.alert_text = response.data;
+            })
+            .catch((error)=>{
+                console.log(error);
+            });
+
+            this.dialog_edit = false;
+        },
         //Функция Удаления записи из БД принимает ИД
         onConfirmDel(){
             this.dialog_del = false;
@@ -120,7 +173,15 @@ export default {
             //хотим удалить
             this.dialog_del = true;
             this.id_del = id;
-        }
+        },
+        onEdit(id){
+            this.dialog_edit = true;
+            // let item = this.items.find(item=>{return item.id===id});
+            // this.edit_name = item.name;
+            // this.edit_price = item.price;
+            // this.edit_id = item.id;
+            this.data_edit = {...this.items.find(item=>{return item.id===id})}
+        }   
     }
 }
 </script>

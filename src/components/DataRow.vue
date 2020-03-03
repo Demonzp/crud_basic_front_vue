@@ -3,7 +3,7 @@
         <td>{{ item.name }}</td>
         <td>{{ item.price }}</td>
         <td>
-            <v-btn color="primary">Edit</v-btn>
+            <v-btn color="primary" @click="$emit('edit', item.id)">Edit</v-btn>
             <!-- тут ты при клике на кнопочку емитим событие делете на которое подписались
             в отце и предаем обратно ид как параметр что бы он знал каво мы удаляем-->
             <v-btn color="error" @click="$emit('delete', item.id)">Delete</v-btn>
